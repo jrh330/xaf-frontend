@@ -1,25 +1,20 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import XATGame from "./XATGame";
+import DeckBuilder from "./DeckBuilder";
 
-function App() {
+const App = () => {
+  const [deck, setDeck] = useState([]);
+  const [gameStarted, setGameStarted] = useState(false); // ✅ Fixed: Added useState and semicolon
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="p-4 max-w-lg mx-auto">
+      {!gameStarted ? (
+        <DeckBuilder setDeck={setDeck} startGame={() => setGameStarted(true)} />
+      ) : (
+        <XATGame deck={deck} />
+      )}
     </div>
   );
-}
+};
 
 export default App;
