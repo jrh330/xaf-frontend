@@ -57,8 +57,8 @@ const DeckBuilder = ({ setDeck, startGame }) => {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto flex flex-col items-center" style={{ paddingRight: "50px", paddingLeft: "50px" }}>
-      <div className="w-2/3">
+    <div className="p-4 max-w-lg mx-auto flex flex-col items-center" style={{ padding: "20px 50px" }}>
+      <div className="w-full max-w-3xl">
         <h2 className="text-xl font-bold mb-4">Create Your Deck</h2>
         <div className="mb-4 p-4 border rounded">
           <input
@@ -99,14 +99,7 @@ const DeckBuilder = ({ setDeck, startGame }) => {
           </button>
         </div>
       </div>
-      <button
-        onClick={startGame}
-        className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-        disabled={!isDeckComplete}
-      >
-        Start Game
-      </button>
-      <div className="w-1/3 pl-4">
+      <div className="w-full max-w-3xl">
         <h3 className="text-lg font-bold mb-2">Your Deck ({cards.length}/7)</h3>
         <table className="w-full border">
           <thead>
@@ -137,10 +130,15 @@ const DeckBuilder = ({ setDeck, startGame }) => {
           </tbody>
         </table>
       </div>
+      <button
+        onClick={startGame}
+        className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
+        disabled={!isDeckComplete}
+      >
+        Start Game
+      </button>
     </div>
   );
 };
 
 export default DeckBuilder;
-
-
