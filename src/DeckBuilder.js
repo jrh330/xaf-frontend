@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 import { motion } from "framer-motion";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const socket = io("https://your-backend.onrender.com");
 
 const DeckBuilder = ({ setDeck, startGame }) => {
   const [cards, setCards] = useState([]);
-  const [newCard, setNewCard] = useState({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
+  const [newCard, setNewCard] = useState({ 
+    name: "", 
+    image: "", 
+    attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } 
+  });
   const [isDeckComplete, setIsDeckComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
@@ -32,6 +37,9 @@ const DeckBuilder = ({ setDeck, startGame }) => {
         ...newCard,
         attributes: { ...newCard.attributes, [attr]: value }
       });
+    } else {
+      setErrorMessage("Total attribute points cannot exceed 15.");
+      setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
@@ -40,13 +48,30 @@ const DeckBuilder = ({ setDeck, startGame }) => {
       setCards([...cards, newCard]);
       if (cards.length === 6) setIsDeckComplete(true);
       setNewCard({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
+      setErrorMessage("");
     } else {
       setErrorMessage("Please enter a name for the card.");
     }
   };
 
   const startGameHandler = () => {
-    socket.emit("startGame");
+    if (cards.length === 7) {
+      socket.emit("startGame", { deck: cards });
+      setDeck(cards);
+    } else {
+      setErrorMessage("You need 7 cards to start the game.");
+    }
+  };
+
+  // Handle drag and drop reordering
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(cards);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setCards(items);
   };
 
   return (
@@ -82,6 +107,9 @@ const DeckBuilder = ({ setDeck, startGame }) => {
                   </div>
                 ))}
               </div>
+              <div className="mt-2 text-sm text-gray-500">
+                Total points: {Object.values(newCard.attributes).reduce((sum, val) => sum + val, 0)}/15
+              </div>
               <button
                 onClick={addCard}
                 className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
@@ -92,38 +120,69 @@ const DeckBuilder = ({ setDeck, startGame }) => {
             </div>
           </div>
           <h3 className="text-lg font-bold mb-2">Your Deck ({cards.length}/7)</h3>
-          <table className="w-full border">
-            <thead>
-              <tr>
-                <th className="border p-1">#</th>
-                <th className="border p-1">Image</th>
-                <th className="border p-1">Name</th>
-                <th className="border p-1">A</th>
-                <th className="border p-1">B</th>
-                <th className="border p-1">C</th>
-                <th className="border p-1">D</th>
-                <th className="border p-1">E</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cards.map((card, index) => (
-                <tr key={index}>
-                  <td className="border p-1 text-center">{index + 1}</td>
-                  <td className="border p-1 text-center">{card.image && <img src={card.image} alt="Card" className="w-10 h-10" />}</td>
-                  <td className="border p-1">{card.name}</td>
-                  <td className="border p-1 text-center">{card.attributes.A}</td>
-                  <td className="border p-1 text-center">{card.attributes.B}</td>
-                  <td className="border p-1 text-center">{card.attributes.C}</td>
-                  <td className="border p-1 text-center">{card.attributes.D}</td>
-                  <td className="border p-1 text-center">{card.attributes.E}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p className="text-sm text-gray-600 mb-4">Drag and drop cards to reorder them</p>
+          
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="deck">
+              {(provided) => (
+                <div
+                  className="w-full"
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  <table className="w-full border">
+                    <thead>
+                      <tr>
+                        <th className="border p-1">#</th>
+                        <th className="border p-1">Image</th>
+                        <th className="border p-1">Name</th>
+                        <th className="border p-1">A</th>
+                        <th className="border p-1">B</th>
+                        <th className="border p-1">C</th>
+                        <th className="border p-1">D</th>
+                        <th className="border p-1">E</th>
+                        <th className="border p-1">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cards.map((card, index) => (
+                        <Draggable key={index} draggableId={`card-${index}`} index={index}>
+                          {(provided) => (
+                            <tr
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="hover:bg-gray-100 cursor-move"
+                            >
+                              <td className="border p-1 text-center">{index + 1}</td>
+                              <td className="border p-1 text-center">
+                                {card.image && <img src={card.image} alt="Card" className="w-10 h-10" />}
+                              </td>
+                              <td className="border p-1">{card.name}</td>
+                              <td className="border p-1 text-center">{card.attributes.A}</td>
+                              <td className="border p-1 text-center">{card.attributes.B}</td>
+                              <td className="border p-1 text-center">{card.attributes.C}</td>
+                              <td className="border p-1 text-center">{card.attributes.D}</td>
+                              <td className="border p-1 text-center">{card.attributes.E}</td>
+                              <td className="border p-1 text-center">
+                                {Object.values(card.attributes).reduce((sum, val) => sum + val, 0)}
+                              </td>
+                            </tr>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+          
           <button
             onClick={startGameHandler}
             className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-            disabled={!isDeckComplete}
+            disabled={cards.length !== 7}
           >
             Start Game
           </button>
