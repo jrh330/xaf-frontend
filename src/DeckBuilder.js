@@ -8,6 +8,7 @@ const DeckBuilder = ({ setDeck, startGame }) => {
   const [cards, setCards] = useState([]);
   const [newCard, setNewCard] = useState({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
   const [isDeckComplete, setIsDeckComplete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleAttributeChange = (attr, value) => {
     const totalPoints = Object.values(newCard.attributes).reduce((sum, val) => sum + val, 0) - newCard.attributes[attr] + value;
@@ -20,26 +21,43 @@ const DeckBuilder = ({ setDeck, startGame }) => {
   };
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0];
+    event.preventDefault();
+    const file = event.dataTransfer ? event.dataTransfer.files[0] : event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setNewCard({ ...newCard, image: e.target.result });
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > 800 || img.height > 800) {
+          setErrorMessage("Image is too large. Maximum size allowed is 800x800 pixels.");
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const size = 100;
+        canvas.width = size;
+        canvas.height = size;
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        setNewCard({ ...newCard, image: canvas.toDataURL() });
+        setErrorMessage("");
       };
-      reader.readAsDataURL(file);
+      img.src = URL.createObjectURL(file);
     }
   };
 
   const addCard = () => {
-    if (cards.length < 7) {
+    if (cards.length < 7 && newCard.name.trim() !== "") {
       setCards([...cards, newCard]);
       if (cards.length === 6) setIsDeckComplete(true);
       setNewCard({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
+    } else {
+      setErrorMessage("Please enter a name for the card.");
     }
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto flex" style={{ paddingRight: "50px" }}>
+    <div className="p-4 max-w-lg mx-auto flex flex-col items-center" style={{ paddingRight: "50px", paddingLeft: "50px" }}>
       <div className="w-2/3">
         <h2 className="text-xl font-bold mb-4">Create Your Deck</h2>
         <div className="mb-4 p-4 border rounded">
@@ -51,13 +69,11 @@ const DeckBuilder = ({ setDeck, startGame }) => {
             className="block w-full p-2 border rounded mb-2"
             disabled={isDeckComplete}
           />
-          <input
-            type="file"
-            accept="image/png, image/jpeg"
-            onChange={handleImageUpload}
-            className="block w-full p-2 border rounded mb-2"
-            disabled={isDeckComplete}
-          />
+          <div className="border p-4 mb-2 text-center" onDrop={handleImageUpload} onDragOver={(e) => e.preventDefault()}>
+            Drag & Drop Image Here (Max: 800x800)
+          </div>
+          {newCard.image && <img src={newCard.image} alt="Card" className="w-24 h-24 mx-auto mb-2" />}
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           <div className="grid grid-cols-5 gap-2">
             {Object.keys(newCard.attributes).map((attr) => (
               <div key={attr} className="text-center">
@@ -83,12 +99,20 @@ const DeckBuilder = ({ setDeck, startGame }) => {
           </button>
         </div>
       </div>
+      <button
+        onClick={startGame}
+        className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
+        disabled={!isDeckComplete}
+      >
+        Start Game
+      </button>
       <div className="w-1/3 pl-4">
         <h3 className="text-lg font-bold mb-2">Your Deck ({cards.length}/7)</h3>
         <table className="w-full border">
           <thead>
             <tr>
               <th className="border p-1">#</th>
+              <th className="border p-1">Image</th>
               <th className="border p-1">Name</th>
               <th className="border p-1">A</th>
               <th className="border p-1">B</th>
@@ -101,6 +125,7 @@ const DeckBuilder = ({ setDeck, startGame }) => {
             {cards.map((card, index) => (
               <tr key={index}>
                 <td className="border p-1 text-center">{index + 1}</td>
+                <td className="border p-1 text-center">{card.image && <img src={card.image} alt="Card" className="w-10 h-10" />}</td>
                 <td className="border p-1">{card.name}</td>
                 <td className="border p-1 text-center">{card.attributes.A}</td>
                 <td className="border p-1 text-center">{card.attributes.B}</td>
@@ -117,3 +142,5 @@ const DeckBuilder = ({ setDeck, startGame }) => {
 };
 
 export default DeckBuilder;
+
+
