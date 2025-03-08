@@ -1,4 +1,4 @@
-// DeckBuilder.js
+/ DeckBuilder.js
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 
@@ -154,4 +154,46 @@ const DeckBuilder = ({ setDeck, startGame }) => {
                     {Object.values(card.attributes).reduce((sum, val) => sum + val, 0)}
                   </td>
                   <td className="border p-1 text-center">
-                    <bu
+                    <button 
+                      onClick={() => moveCard(index, -1)} 
+                      disabled={index === 0}
+                      className="px-2 py-1 bg-gray-200 rounded mr-1 disabled:opacity-50"
+                    >
+                      ↑
+                    </button>
+                    <button 
+                      onClick={() => moveCard(index, 1)} 
+                      disabled={index === cards.length - 1}
+                      className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
+                    >
+                      ↓
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <button
+            onClick={startGameHandler}
+            className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
+            disabled={cards.length !== 7}
+          >
+            Start Game
+          </button>
+        </>
+      ) : (
+        <div>
+          <h3 className="text-lg font-bold">Game In Progress</h3>
+          {roundData ? (
+            <p>Round Attribute: {roundData.attribute}</p>
+          ) : (
+            <p>Waiting for round...</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DeckBuilder;
