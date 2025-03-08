@@ -174,95 +174,106 @@ const XATGame = ({ deck }) => {
         <div className="border-2 border-black p-4 rounded" style={{ minHeight: "400px" }}>
           <h3 className="font-bold mb-3 text-center border-b pb-2">Your Deck</h3>
           <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse border border-gray-300">
-  <thead>
-    <tr className="bg-gray-100">
-      <th className="p-2 text-left border border-gray-300">Card</th>
-      <th className="p-2 text-center border border-gray-300">Image</th>
-      <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`}>A</th>
-      <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`}>B</th>
-      <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`}>C</th>
-      <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`}>D</th>
-      <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`}>E</th>
-    </tr>
-  </thead>
-  <tbody>
-    {deck ? deck.map((card, idx) => (
-      <tr key={idx} className={idx === round - 1 ? "bg-blue-100" : idx < round - 1 ? "bg-gray-100" : ""}>
-        <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
-        <td className="p-2 border border-gray-300 text-center">
-          {card.image ? (
-            <img src={card.image} alt="Card" className="w-10 h-10 object-cover mx-auto" />
-          ) : (
-            <div className="w-10 h-10 bg-gray-200 rounded mx-auto"></div>
-          )}
-        </td>
-        <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`}>{card.attributes.A}</td>
-        <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`}>{card.attributes.B}</td>
-        <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`}>{card.attributes.C}</td>
-        <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`}>{card.attributes.D}</td>
-        <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`}>{card.attributes.E}</td>
-      </tr>
-    )) : (
-      <tr>
-        <td colSpan="7" className="p-4 text-center text-gray-500 border border-gray-300">No cards in deck</td>
-      </tr>
-    )}
-  </tbody>
-</table>
+            <table className="w-full text-sm border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left border border-gray-300">Card</th>
+                  <th className="p-2 text-center border border-gray-300">Image</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`}>A</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`}>B</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`}>C</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`}>D</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`}>E</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deck ? deck.map((card, idx) => (
+                  <tr key={idx} className={idx === round - 1 ? "bg-blue-100" : idx < round - 1 ? "bg-gray-100" : ""}>
+                    <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
+                    <td className="p-2 border border-gray-300 text-center">
+                      {card.image ? (
+                        <img src={card.image} alt="Card" className="w-10 h-10 object-cover mx-auto" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded mx-auto"></div>
+                      )}
+                    </td>
+                    <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`}>{card.attributes.A}</td>
+                    <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`}>{card.attributes.B}</td>
+                    <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`}>{card.attributes.C}</td>
+                    <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`}>{card.attributes.D}</td>
+                    <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`}>{card.attributes.E}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="7" className="p-4 text-center text-gray-500 border border-gray-300">No cards in deck</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
         
         {/* Middle Box - Current Gameplay */}
-        <div className={`p-4 rounded-lg mb-4 ${roundWinner === socket.id || roundWinner === "tie" ? "bg-green-100 border border-green-500" : "bg-blue-100 border border-blue-300"}`}>
-  <h4 className="font-bold text-center mb-2">Your Card (Round {round})</h4>
-  
-  {playerCard.image && (
-    <div className="flex justify-center mb-2">
-      <img 
-        src={playerCard.image} 
-        alt="Card" 
-        className="w-16 h-16 object-cover border border-gray-300 rounded"
-      />
-    </div>
-  )}
-  
-  <p className="text-center text-lg mb-2">{playerCard.name || `Card ${round}`}</p>
-  <div className="grid grid-cols-5 gap-1 mt-3">
-    {Object.entries(playerCard.attributes).map(([key, value]) => (
-      <div key={key} className={`text-center p-2 ${key === attribute ? 'bg-yellow-300 rounded font-bold' : ''}`}>
-        <div className="font-bold">{key}</div>
-        <div>{value}</div>
-      </div>
-    ))}
-  </div>
-</div>
+        <div className="border-2 border-black p-4 rounded" style={{ minHeight: "400px" }}>
+          <h3 className="font-bold mb-3 text-center border-b pb-2">Current Round</h3>
+          
+          {gameStatus === "waiting" ? (
+            <div className="text-center p-8">
+              <p className="text-lg">Waiting for opponent...</p>
+              <div className="mt-4 animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+            </div>
+          ) : gameStatus === "playing" ? (
+            <>
+              {playerCard && round > 0 ? (
+                <div>
+                  <div className={`p-4 rounded-lg mb-4 ${roundWinner === socket.id || roundWinner === "tie" ? "bg-green-100 border border-green-500" : "bg-blue-100 border border-blue-300"}`}>
+                    <h4 className="font-bold text-center mb-2">Your Card (Round {round})</h4>
+                    
+                    {playerCard.image && (
+                      <div className="flex justify-center mb-2">
+                        <img 
+                          src={playerCard.image} 
+                          alt="Card" 
+                          className="w-16 h-16 object-cover border border-gray-300 rounded"
+                        />
+                      </div>
+                    )}
+                    
+                    <p className="text-center text-lg mb-2">{playerCard.name || `Card ${round}`}</p>
+                    <div className="grid grid-cols-5 gap-1 mt-3">
+                      {Object.entries(playerCard.attributes).map(([key, value]) => (
+                        <div key={key} className={`text-center p-2 ${key === attribute ? 'bg-yellow-300 rounded font-bold' : ''}`}>
+                          <div className="font-bold">{key}</div>
+                          <div>{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   
                   {opponentCard && (
-                  <div className="p-4 rounded-lg bg-red-100 border border-red-300 mb-4">
-                  <h4 className="font-bold text-center mb-2">Opponent's Card</h4>
-                  
-                  {opponentCard.image && (
-                    <div className="flex justify-center mb-2">
-                      <img 
-                        src={opponentCard.image} 
-                        alt="Card" 
-                        className="w-16 h-16 object-cover border border-gray-300 rounded"
-                      />
-                    </div>
-                  )}
-                  
-                  <p className="text-center text-lg mb-2">{opponentCard.name || `Card ${round}`}</p>
-                  <div className="grid grid-cols-5 gap-1 mt-3">
-                    {Object.entries(opponentCard.attributes).map(([key, value]) => (
-                      <div key={key} className={`text-center p-2 ${key === attribute ? 'bg-yellow-300 rounded font-bold' : ''}`}>
-                        <div className="font-bold">{key}</div>
-                        <div>{value}</div>
+                    <div className="p-4 rounded-lg bg-red-100 border border-red-300 mb-4">
+                      <h4 className="font-bold text-center mb-2">Opponent's Card</h4>
+                      
+                      {opponentCard.image && (
+                        <div className="flex justify-center mb-2">
+                          <img 
+                            src={opponentCard.image} 
+                            alt="Card" 
+                            className="w-16 h-16 object-cover border border-gray-300 rounded"
+                          />
+                        </div>
+                      )}
+                      
+                      <p className="text-center text-lg mb-2">{opponentCard.name || `Card ${round}`}</p>
+                      <div className="grid grid-cols-5 gap-1 mt-3">
+                        {Object.entries(opponentCard.attributes).map(([key, value]) => (
+                          <div key={key} className={`text-center p-2 ${key === attribute ? 'bg-yellow-300 rounded font-bold' : ''}`}>
+                            <div className="font-bold">{key}</div>
+                            <div>{value}</div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
+                    </div>
                   )}
                   
                   {roundWinner && (
@@ -306,40 +317,40 @@ const XATGame = ({ deck }) => {
           
           {opponentPlayedCards.length > 0 ? (
             <div className="overflow-y-auto" style={{ maxHeight: "330px" }}>
-      <table className="w-full text-sm border-collapse border border-gray-300">
-  <thead>
-    <tr className="bg-gray-100">
-      <th className="p-2 text-left border border-gray-300">Round</th>
-      <th className="p-2 text-left border border-gray-300">Card</th>
-      <th className="p-2 text-center border border-gray-300">Image</th>
-      <th className="p-2 text-center border border-gray-300">A</th>
-      <th className="p-2 text-center border border-gray-300">B</th>
-      <th className="p-2 text-center border border-gray-300">C</th>
-      <th className="p-2 text-center border border-gray-300">D</th>
-      <th className="p-2 text-center border border-gray-300">E</th>
-    </tr>
-  </thead>
-  <tbody>
-    {opponentPlayedCards.map((card, idx) => (
-      <tr key={idx} className={idx === opponentPlayedCards.length - 1 ? "bg-red-50" : ""}>
-        <td className="p-2 border border-gray-300">{idx + 1}</td>
-        <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
-        <td className="p-2 border border-gray-300 text-center">
-          {card.image ? (
-            <img src={card.image} alt="Card" className="w-10 h-10 object-cover mx-auto" />
-          ) : (
-            <div className="w-10 h-10 bg-gray-200 rounded mx-auto"></div>
-          )}
-        </td>
-        <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'A' ? 'bg-yellow-100' : ''}`}>{card.attributes.A}</td>
-        <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'B' ? 'bg-yellow-100' : ''}`}>{card.attributes.B}</td>
-        <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'C' ? 'bg-yellow-100' : ''}`}>{card.attributes.C}</td>
-        <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'D' ? 'bg-yellow-100' : ''}`}>{card.attributes.D}</td>
-        <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'E' ? 'bg-yellow-100' : ''}`}>{card.attributes.E}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+              <table className="w-full text-sm border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 text-left border border-gray-300">Round</th>
+                    <th className="p-2 text-left border border-gray-300">Card</th>
+                    <th className="p-2 text-center border border-gray-300">Image</th>
+                    <th className="p-2 text-center border border-gray-300">A</th>
+                    <th className="p-2 text-center border border-gray-300">B</th>
+                    <th className="p-2 text-center border border-gray-300">C</th>
+                    <th className="p-2 text-center border border-gray-300">D</th>
+                    <th className="p-2 text-center border border-gray-300">E</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {opponentPlayedCards.map((card, idx) => (
+                    <tr key={idx} className={idx === opponentPlayedCards.length - 1 ? "bg-red-50" : ""}>
+                      <td className="p-2 border border-gray-300">{idx + 1}</td>
+                      <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
+                      <td className="p-2 border border-gray-300 text-center">
+                        {card.image ? (
+                          <img src={card.image} alt="Card" className="w-10 h-10 object-cover mx-auto" />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 rounded mx-auto"></div>
+                        )}
+                      </td>
+                      <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'A' ? 'bg-yellow-100' : ''}`}>{card.attributes.A}</td>
+                      <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'B' ? 'bg-yellow-100' : ''}`}>{card.attributes.B}</td>
+                      <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'C' ? 'bg-yellow-100' : ''}`}>{card.attributes.C}</td>
+                      <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'D' ? 'bg-yellow-100' : ''}`}>{card.attributes.D}</td>
+                      <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'E' ? 'bg-yellow-100' : ''}`}>{card.attributes.E}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="text-center p-8 text-gray-500">
