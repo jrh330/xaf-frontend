@@ -1,31 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DeckBuilder from './DeckBuilder';
-// Import but don't render XATGame yet
 import XATGame from './XATGame';
 
 function App() {
-  const [componentCheck, setComponentCheck] = useState({
-    checked: false,
-    hasDeckBuilder: false,
-    hasXATGame: false
-  });
+  const [deck, setDeck] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
-  useEffect(() => {
-    const check = {
-      checked: true,
-      hasDeckBuilder: typeof DeckBuilder === 'function',
-      hasXATGame: typeof XATGame === 'function'
-    };
-    console.log("Component check:", check);
-    setComponentCheck(check);
-  }, []);
+  const startGame = (deckData) => {
+    console.log("Starting game with deck:", deckData);
+    setDeck(deckData);
+    setGameStarted(true);
+  };
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Import Test</h1>
-      <pre style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
-        {JSON.stringify(componentCheck, null, 2)}
-      </pre>
+      <h1>XAT Game</h1>
+      {!gameStarted ? (
+        <>
+          <p>Create your deck to start playing:</p>
+          <DeckBuilder setDeck={setDeck} startGame={startGame} />
+        </>
+      ) : (
+        <>
+          <p>Game started!</p>
+          <button 
+            onClick={() => setGameStarted(false)}
+            style={{ marginBottom: '20px', padding: '5px 10px' }}
+          >
+            Back to Deck Builder
+          </button>
+          <XATGame deck={deck} />
+        </>
+      )}
     </div>
   );
 }
