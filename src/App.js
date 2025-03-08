@@ -12,22 +12,23 @@ function App() {
     setGameStarted(true);
   };
 
+  const returnToDeckBuilder = () => {
+    setGameStarted(false);
+  };
+
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>XAT Game</h1>
+    <div className="App p-4">
+      <h1 className="text-3xl font-bold text-center mb-6">XAT Card Game</h1>
+      
       {!gameStarted ? (
-        <>
-          <p>Create your deck to start playing:</p>
-          <DeckBuilder setDeck={setDeck} startGame={startGame} />
-        </>
+        <DeckBuilder setDeck={setDeck} startGame={startGame} />
       ) : (
         <>
-          <p>Game started!</p>
           <button 
-            onClick={() => setGameStarted(false)}
-            style={{ marginBottom: '20px', padding: '5px 10px' }}
+            onClick={returnToDeckBuilder}
+            className="mb-4 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
           >
-            Back to Deck Builder
+            ← Back to Deck Builder
           </button>
           <XATGame deck={deck} />
         </>
