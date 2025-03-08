@@ -1,12 +1,45 @@
 import React, { useState, useEffect } from "react";
-import io from "socket.io-client";
 
-// Make sure this matches your backend URL
-const socket = io("https://xat-backend-i0n8.onrender.com", {
-  transports: ["websocket", "polling"],
-});
+// Mock socket functionality for build/deployment when backend is unavailable
+const createSocket = () => {
+  // Create a mock socket object that won't crash when backend is down
+  const mockSocket = {
+    on: (event, callback) => {},
+    off: (event) => {},
+    emit: (event, data) => {
+      console.log(`Emitted ${event} with data:`, data);
+    },
+    id: "mock-socket-id-" + Math.floor(Math.random() * 10000)
+  };
 
-const DeckBuilder = ({ setDeck, startGame }) => {
+  try {
+    // Only try to import socket.io-client if we're in browser environment
+    if (typeof window !== 'undefined') {
+      const io = require('socket.io-client');
+      const socket = io("https://xat-backend-i0n8.onrender.com", {
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        timeout: 10000,
+      });
+      
+      // Add connection event handlers
+      socket.on('connect_error', (err) => {
+        console.error('Socket connection error:', err);
+      });
+      
+      return socket;
+    }
+  } catch (err) {
+    console.error("Failed to initialize socket connection:", err);
+  }
+  
+  return mockSocket;
+};
+
+// Initialize socket outside component to avoid recreation on rerenders
+const socket = createSocket();
+
+const DeckBuilder = ({ setDeck, startGame, onConnectionStatus }) => {
   const [cards, setCards] = useState([]);
   const [newCard, setNewCard] = useState({ 
     name: "", 
@@ -17,19 +50,48 @@ const DeckBuilder = ({ setDeck, startGame }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
   const [roundData, setRoundData] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
+  // Handle socket connection status
   useEffect(() => {
+    const handleConnect = () => {
+      setIsConnected(true);
+      if (onConnectionStatus) onConnectionStatus('connected');
+    };
+    
+    const handleDisconnect = () => {
+      setIsConnected(false);
+      if (onConnectionStatus) onConnectionStatus('error');
+    };
+    
+    const handleConnectError = (err) => {
+      setIsConnected(false);
+      if (onConnectionStatus) onConnectionStatus('error');
+    };
+
+    // Add event handlers for connection status
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    
+    // Game-specific event handlers
     socket.on("gameStart", () => {
       setGameStarted(true);
     });
+    
     socket.on("roundPlayed", (data) => {
       setRoundData(data);
     });
+
+    // Clean up event handlers on unmount
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
       socket.off("gameStart");
       socket.off("roundPlayed");
     };
-  }, []);
+  }, [onConnectionStatus]);
 
   const handleAttributeChange = (attr, value) => {
     const totalPoints = Object.values(newCard.attributes).reduce((sum, val) => sum + val, 0) - newCard.attributes[attr] + value;
@@ -69,10 +131,16 @@ const DeckBuilder = ({ setDeck, startGame }) => {
 
   const startGameHandler = () => {
     if (cards.length === 7) {
-      socket.emit("startGame");
+      try {
+        socket.emit("startGame");
+      } catch (err) {
+        console.error("Error starting game:", err);
+      }
+      
       if (typeof setDeck === 'function') {
         setDeck(cards);
       }
+      
       if (typeof startGame === 'function') {
         startGame(cards);
       }
@@ -87,6 +155,11 @@ const DeckBuilder = ({ setDeck, startGame }) => {
         <>
           <div className="w-full max-w-3xl">
             <h2 className="text-xl font-bold mb-4">Create Your Deck</h2>
+            {!isConnected && (
+              <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+                Warning: Backend connection unavailable. You can still create your deck.
+              </div>
+            )}
             <div className="mb-4 p-4 border rounded">
               <input
                 type="text"
@@ -186,12 +259,17 @@ const DeckBuilder = ({ setDeck, startGame }) => {
             className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
             disabled={cards.length !== 7}
           >
-            Start Game
+            Start Game{!isConnected ? " (Offline Mode)" : ""}
           </button>
         </>
       ) : (
         <div>
           <h3 className="text-lg font-bold">Game In Progress</h3>
+          {!isConnected && (
+            <div className="mt-2 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+              Backend connection unavailable. Waiting for connection...
+            </div>
+          )}
           {roundData ? (
             <p>Round Attribute: {roundData.attribute}</p>
           ) : (
