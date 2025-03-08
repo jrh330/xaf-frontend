@@ -1,7 +1,7 @@
+
+```javascript
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
-import { motion } from "framer-motion";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const socket = io("https://your-backend.onrender.com");
 
@@ -54,6 +54,24 @@ const DeckBuilder = ({ setDeck, startGame }) => {
     }
   };
 
+  const moveCardUp = (index) => {
+    if (index === 0) return;
+    const newCards = [...cards];
+    const temp = newCards[index];
+    newCards[index] = newCards[index - 1];
+    newCards[index - 1] = temp;
+    setCards(newCards);
+  };
+
+  const moveCardDown = (index) => {
+    if (index === cards.length - 1) return;
+    const newCards = [...cards];
+    const temp = newCards[index];
+    newCards[index] = newCards[index + 1];
+    newCards[index + 1] = temp;
+    setCards(newCards);
+  };
+
   const startGameHandler = () => {
     if (cards.length === 7) {
       socket.emit("startGame", { deck: cards });
@@ -61,17 +79,6 @@ const DeckBuilder = ({ setDeck, startGame }) => {
     } else {
       setErrorMessage("You need 7 cards to start the game.");
     }
-  };
-
-  // Handle drag and drop reordering
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(cards);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setCards(items);
   };
 
   return (
@@ -120,64 +127,61 @@ const DeckBuilder = ({ setDeck, startGame }) => {
             </div>
           </div>
           <h3 className="text-lg font-bold mb-2">Your Deck ({cards.length}/7)</h3>
-          <p className="text-sm text-gray-600 mb-4">Drag and drop cards to reorder them</p>
+          <p className="text-sm text-gray-600 mb-4">Use arrows to reorder your cards</p>
           
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="deck">
-              {(provided) => (
-                <div
-                  className="w-full"
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                >
-                  <table className="w-full border">
-                    <thead>
-                      <tr>
-                        <th className="border p-1">#</th>
-                        <th className="border p-1">Image</th>
-                        <th className="border p-1">Name</th>
-                        <th className="border p-1">A</th>
-                        <th className="border p-1">B</th>
-                        <th className="border p-1">C</th>
-                        <th className="border p-1">D</th>
-                        <th className="border p-1">E</th>
-                        <th className="border p-1">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cards.map((card, index) => (
-                        <Draggable key={index} draggableId={`card-${index}`} index={index}>
-                          {(provided) => (
-                            <tr
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="hover:bg-gray-100 cursor-move"
-                            >
-                              <td className="border p-1 text-center">{index + 1}</td>
-                              <td className="border p-1 text-center">
-                                {card.image && <img src={card.image} alt="Card" className="w-10 h-10" />}
-                              </td>
-                              <td className="border p-1">{card.name}</td>
-                              <td className="border p-1 text-center">{card.attributes.A}</td>
-                              <td className="border p-1 text-center">{card.attributes.B}</td>
-                              <td className="border p-1 text-center">{card.attributes.C}</td>
-                              <td className="border p-1 text-center">{card.attributes.D}</td>
-                              <td className="border p-1 text-center">{card.attributes.E}</td>
-                              <td className="border p-1 text-center">
-                                {Object.values(card.attributes).reduce((sum, val) => sum + val, 0)}
-                              </td>
-                            </tr>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <table className="w-full border">
+            <thead>
+              <tr>
+                <th className="border p-1">#</th>
+                <th className="border p-1">Image</th>
+                <th className="border p-1">Name</th>
+                <th className="border p-1">A</th>
+                <th className="border p-1">B</th>
+                <th className="border p-1">C</th>
+                <th className="border p-1">D</th>
+                <th className="border p-1">E</th>
+                <th className="border p-1">Total</th>
+                <th className="border p-1">Order</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cards.map((card, index) => (
+                <tr key={index} className="hover:bg-gray-100">
+                  <td className="border p-1 text-center">{index + 1}</td>
+                  <td className="border p-1 text-center">
+                    {card.image && <img src={card.image} alt="Card" className="w-10 h-10" />}
+                  </td>
+                  <td className="border p-1">{card.name}</td>
+                  <td className="border p-1 text-center">{card.attributes.A}</td>
+                  <td className="border p-1 text-center">{card.attributes.B}</td>
+                  <td className="border p-1 text-center">{card.attributes.C}</td>
+                  <td className="border p-1 text-center">{card.attributes.D}</td>
+                  <td className="border p-1 text-center">{card.attributes.E}</td>
+                  <td className="border p-1 text-center">
+                    {Object.values(card.attributes).reduce((sum, val) => sum + val, 0)}
+                  </td>
+                  <td className="border p-1 text-center">
+                    <div className="flex flex-col items-center">
+                      <button 
+                        onClick={() => moveCardUp(index)} 
+                        disabled={index === 0} 
+                        className="px-2 py-1 mb-1 text-xs bg-gray-200 rounded disabled:opacity-50"
+                      >
+                        ↑
+                      </button>
+                      <button 
+                        onClick={() => moveCardDown(index)} 
+                        disabled={index === cards.length - 1} 
+                        className="px-2 py-1 text-xs bg-gray-200 rounded disabled:opacity-50"
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           
           <button
             onClick={startGameHandler}
@@ -202,3 +206,4 @@ const DeckBuilder = ({ setDeck, startGame }) => {
 };
 
 export default DeckBuilder;
+```
