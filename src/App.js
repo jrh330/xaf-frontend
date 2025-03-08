@@ -1,10 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DeckBuilder from './DeckBuilder';
 import XATGame from './XATGame';
 
 function App() {
   const [deck, setDeck] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
+  
+  // Load saved deck from localStorage when the app starts
+  useEffect(() => {
+    const savedDeck = localStorage.getItem('xatDeck');
+    if (savedDeck) {
+      try {
+        const parsedDeck = JSON.parse(savedDeck);
+        setDeck(parsedDeck);
+      } catch (error) {
+        console.error("Failed to parse saved deck:", error);
+      }
+    }
+  }, []);
 
   const startGame = (deckData) => {
     console.log("Starting game with deck:", deckData);
@@ -21,7 +34,7 @@ function App() {
       <h1 className="text-3xl font-bold text-center mb-6">XAT Card Game</h1>
       
       {!gameStarted ? (
-        <DeckBuilder setDeck={setDeck} startGame={startGame} />
+        <DeckBuilder setDeck={setDeck} startGame={startGame} initialDeck={deck} />
       ) : (
         <div>
           <button 
