@@ -1,9 +1,11 @@
+// XATGame.js
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
-import { motion } from "framer-motion";
 
 const socket = io("https://xat-backend-i0n8.onrender.com", {
   transports: ["websocket", "polling"],
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
 });
 
 const XATGame = ({ deck }) => {
@@ -19,11 +21,28 @@ const XATGame = ({ deck }) => {
   const [gameWinner, setGameWinner] = useState(null);
   const [opponentId, setOpponentId] = useState(null);
   const [roundHistory, setRoundHistory] = useState([]);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
+    // Add error handling for socket connection
+    socket.on("connect", () => {
+      console.log("Connected to server");
+      setConnectionError(false);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Connection error:", err);
+      setConnectionError(true);
+      setMessage("Connection error. Trying to reconnect...");
+    });
+
     // Join the game with your deck when component mounts
-    socket.emit("joinGame", { deck });
-    console.log("Joining game with deck:", deck);
+    try {
+      socket.emit("joinGame", { deck });
+      console.log("Joining game with deck:", deck);
+    } catch (err) {
+      console.error("Error joining game:", err);
+    }
     
     socket.on("waitingForOpponent", () => {
       setMessage("Waiting for an opponent to join...");
@@ -58,19 +77,6 @@ const XATGame = ({ deck }) => {
       
       setRoundWinner(data.roundWinner);
       setScores(data.scores);
-      
-      // Add to round history
-      setRoundHistory(prev => [...prev, {
-        round: data.round,
-        attribute: data.attribute,
-        winner: data.roundWinner,
-        playerValue: data.player1Card.playerId === socket.id 
-          ? data.player1Card.attributes[data.attribute]
-          : data.player2Card.attributes[data.attribute],
-        opponentValue: data.player1Card.playerId === socket.id
-          ? data.player2Card.attributes[data.attribute]
-          : data.player1Card.attributes[data.attribute]
-      }]);
       
       // Display who won the round
       if (data.roundWinner === "tie") {
@@ -116,6 +122,8 @@ const XATGame = ({ deck }) => {
     });
 
     return () => {
+      socket.off("connect");
+      socket.off("connect_error");
       socket.off("waitingForOpponent");
       socket.off("gameStart");
       socket.off("roundResult");
@@ -125,22 +133,23 @@ const XATGame = ({ deck }) => {
     };
   }, [deck]);
 
-  const getCardClasses = (isPlayer) => {
-    let classes = "p-4 border rounded-lg shadow-lg transition-all duration-300 ";
-    
-    if (isPlayer) {
-      classes += "bg-blue-500 text-white ";
-      if (roundWinner === socket.id || roundWinner === "tie") classes += "ring-4 ring-yellow-400 ";
-    } else {
-      classes += "bg-red-500 text-white ";
-      if (roundWinner === opponentId || roundWinner === "tie") classes += "ring-4 ring-yellow-400 ";
-    }
-    
-    return classes;
-  };
+  if (connectionError) {
+    return (
+      <div className="p-4 max-w-lg mx-auto text-center">
+        <h2 className="text-xl font-bold mb-4">Connection Error</h2>
+        <p className="mb-4">Unable to connect to the game server. Please check your internet connection and try again.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto bg-gray-100 rounded-lg shadow-md">
+    <div className="p-4 max-w-lg mx-auto bg-gray-100 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-4 text-center">XAT Game</h2>
       
       <div className="bg-white p-4 rounded-lg shadow mb-4">
@@ -149,114 +158,58 @@ const XATGame = ({ deck }) => {
       
       {gameStatus === "playing" && (
         <>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold">Round {round}/7</h3>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-center px-3 py-1 bg-blue-100 rounded-full">
-                <span className="font-bold text-blue-700">You: {scores[socket.id] || 0}</span>
-              </div>
-              <div className="px-2 py-1 bg-gray-200 rounded-full text-sm">
-                VS
-              </div>
-              <div className="text-center px-3 py-1 bg-red-100 rounded-full">
-                <span className="font-bold text-red-700">Opponent: {scores[opponentId] || 0}</span>
-              </div>
-            </div>
-          </div>
-          
+          <h3 className="text-lg font-bold text-center mb-2">Round {round}/7</h3>
           {attribute && (
-            <div className="mb-6 text-center">
-              <span className="bg-purple-500 text-white px-6 py-2 rounded-full inline-block text-lg font-bold">
+            <div className="mb-4 text-center">
+              <span className="bg-purple-500 text-white px-4 py-1 rounded-full inline-block">
                 Attribute: {attribute}
               </span>
             </div>
           )}
           
+          <div className="mb-4 flex justify-between items-center">
+            <div className="text-center font-bold">
+              You: {scores[socket.id] || 0}
+            </div>
+            <div className="px-2 py-1 bg-gray-200 rounded text-sm">
+              VS
+            </div>
+            <div className="text-center font-bold">
+              Opponent: {scores[opponentId] || 0}
+            </div>
+          </div>
+          
           {playerCard && opponentCard ? (
             <div className="mt-4 flex justify-between gap-4">
-              <motion.div 
-                initial={{ rotateY: 180, opacity: 0 }} 
-                animate={{ rotateY: 0, opacity: 1 }} 
-                transition={{ duration: 0.6 }} 
-                className={getCardClasses(true)}
-                style={{ minWidth: "45%" }}
-              >
+              <div className="p-4 border rounded-lg bg-blue-500 shadow text-white" style={{ minWidth: "45%" }}>
                 <h4 className="font-bold text-center border-b pb-1 mb-2">Your Card</h4>
                 <p className="text-center text-lg mb-3">{playerCard.name}</p>
                 <div className="grid grid-cols-5 gap-1 mt-2">
                   {Object.entries(playerCard.attributes).map(([key, value]) => (
-                    <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1 font-bold' : ''}`}>
+                    <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1' : ''}`}>
                       <div className="font-bold">{key}</div>
                       <div>{value}</div>
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
               
-              <motion.div 
-                initial={{ rotateY: 180, opacity: 0 }} 
-                animate={{ rotateY: 0, opacity: 1 }} 
-                transition={{ duration: 0.6, delay: 0.3 }} 
-                className={getCardClasses(false)}
-                style={{ minWidth: "45%" }}
-              >
+              <div className="p-4 border rounded-lg bg-red-500 shadow text-white" style={{ minWidth: "45%" }}>
                 <h4 className="font-bold text-center border-b pb-1 mb-2">Opponent's Card</h4>
                 <p className="text-center text-lg mb-3">{opponentCard.name}</p>
                 <div className="grid grid-cols-5 gap-1 mt-2">
                   {Object.entries(opponentCard.attributes).map(([key, value]) => (
-                    <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1 font-bold' : ''}`}>
+                    <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1' : ''}`}>
                       <div className="font-bold">{key}</div>
                       <div>{value}</div>
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             </div>
           ) : (
-            <div className="text-center p-8 bg-white rounded shadow">
-              <div className="animate-pulse">
-                <p className="text-xl">Waiting for next round...</p>
-              </div>
-            </div>
-          )}
-          
-          {/* Round History */}
-          {roundHistory.length > 0 && (
-            <div className="mt-8 bg-white p-4 rounded-lg shadow">
-              <h4 className="font-bold mb-2">Round History</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2 text-left">Round</th>
-                      <th className="p-2 text-left">Attribute</th>
-                      <th className="p-2 text-left">Your Value</th>
-                      <th className="p-2 text-left">Opponent Value</th>
-                      <th className="p-2 text-left">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roundHistory.map((round, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                        <td className="p-2">{round.round}</td>
-                        <td className="p-2">{round.attribute}</td>
-                        <td className="p-2">{round.playerValue}</td>
-                        <td className="p-2">{round.opponentValue}</td>
-                        <td className="p-2">
-                          {round.winner === socket.id ? (
-                            <span className="text-green-600 font-bold">Win</span>
-                          ) : round.winner === "tie" ? (
-                            <span className="text-blue-600 font-bold">Tie</span>
-                          ) : (
-                            <span className="text-red-600 font-bold">Loss</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="text-center p-4">
+              <p>Loading cards...</p>
             </div>
           )}
         </>
@@ -267,50 +220,10 @@ const XATGame = ({ deck }) => {
           <h3 className="text-xl font-bold mb-4">
             {gameWinner === socket.id ? "You Won!" : gameWinner === "tie" || gameWinner === null ? "It's a Tie!" : "You Lost!"}
           </h3>
-          <p className="mb-6 text-lg">Final Score: <span className="font-bold text-blue-600">{scores[socket.id] || 0}</span> - <span className="font-bold text-red-600">{scores[opponentId] || 0}</span></p>
-          
-          {/* Round History in game over state */}
-          {roundHistory.length > 0 && (
-            <div className="mb-6 bg-white p-4 rounded-lg shadow">
-              <h4 className="font-bold mb-2">Match History</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2 text-left">Round</th>
-                      <th className="p-2 text-left">Attribute</th>
-                      <th className="p-2 text-left">Your Value</th>
-                      <th className="p-2 text-left">Opponent Value</th>
-                      <th className="p-2 text-left">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roundHistory.map((round, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                        <td className="p-2">{round.round}</td>
-                        <td className="p-2">{round.attribute}</td>
-                        <td className="p-2">{round.playerValue}</td>
-                        <td className="p-2">{round.opponentValue}</td>
-                        <td className="p-2">
-                          {round.winner === socket.id ? (
-                            <span className="text-green-600 font-bold">Win</span>
-                          ) : round.winner === "tie" ? (
-                            <span className="text-blue-600 font-bold">Tie</span>
-                          ) : (
-                            <span className="text-red-600 font-bold">Loss</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          
+          <p className="mb-4">Final Score: You {scores[socket.id] || 0} - {scores[opponentId] || 0} Opponent</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition font-bold"
+            className="bg-blue-500 text-white px-4 py-2 rounded"
           >
             Play Again
           </button>

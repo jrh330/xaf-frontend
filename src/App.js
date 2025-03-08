@@ -1,20 +1,26 @@
+// App.js
 import React, { useState } from "react";
-import XATGame from "./XATGame";
 import DeckBuilder from "./DeckBuilder";
+import XATGame from "./XATGame";
 
-const App = () => {
-  const [deck, setDeck] = useState([]);
-  const [gameStarted, setGameStarted] = useState(false); // ✅ Fixed: Added useState and semicolon
+function App() {
+  const [deck, setDeck] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
+
+  const startGame = (deck) => {
+    setDeck(deck);
+    setGameStarted(true);
+  };
 
   return (
-    <div className="p-4 max-w-lg mx-auto">
+    <div className="App">
       {!gameStarted ? (
-        <DeckBuilder setDeck={setDeck} startGame={() => setGameStarted(true)} />
+        <DeckBuilder setDeck={setDeck} startGame={startGame} />
       ) : (
         <XATGame deck={deck} />
       )}
     </div>
   );
-};
+}
 
 export default App;

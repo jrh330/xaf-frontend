@@ -1,17 +1,15 @@
-
-```javascript
+// DeckBuilder.js
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 
-const socket = io("https://your-backend.onrender.com");
+// Make sure this matches your backend URL
+const socket = io("https://xat-backend-i0n8.onrender.com", {
+  transports: ["websocket", "polling"],
+});
 
 const DeckBuilder = ({ setDeck, startGame }) => {
   const [cards, setCards] = useState([]);
-  const [newCard, setNewCard] = useState({ 
-    name: "", 
-    image: "", 
-    attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } 
-  });
+  const [newCard, setNewCard] = useState({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
   const [isDeckComplete, setIsDeckComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
@@ -54,28 +52,23 @@ const DeckBuilder = ({ setDeck, startGame }) => {
     }
   };
 
-  const moveCardUp = (index) => {
-    if (index === 0) return;
+  const moveCard = (index, direction) => {
+    if ((direction === -1 && index === 0) || (direction === 1 && index === cards.length - 1)) {
+      return; // Can't move beyond array boundaries
+    }
+    
     const newCards = [...cards];
     const temp = newCards[index];
-    newCards[index] = newCards[index - 1];
-    newCards[index - 1] = temp;
-    setCards(newCards);
-  };
-
-  const moveCardDown = (index) => {
-    if (index === cards.length - 1) return;
-    const newCards = [...cards];
-    const temp = newCards[index];
-    newCards[index] = newCards[index + 1];
-    newCards[index + 1] = temp;
+    newCards[index] = newCards[index + direction];
+    newCards[index + direction] = temp;
     setCards(newCards);
   };
 
   const startGameHandler = () => {
     if (cards.length === 7) {
-      socket.emit("startGame", { deck: cards });
+      socket.emit("startGame");
       setDeck(cards);
+      startGame(cards);
     } else {
       setErrorMessage("You need 7 cards to start the game.");
     }
@@ -141,7 +134,7 @@ const DeckBuilder = ({ setDeck, startGame }) => {
                 <th className="border p-1">D</th>
                 <th className="border p-1">E</th>
                 <th className="border p-1">Total</th>
-                <th className="border p-1">Order</th>
+                <th className="border p-1">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -161,49 +154,4 @@ const DeckBuilder = ({ setDeck, startGame }) => {
                     {Object.values(card.attributes).reduce((sum, val) => sum + val, 0)}
                   </td>
                   <td className="border p-1 text-center">
-                    <div className="flex flex-col items-center">
-                      <button 
-                        onClick={() => moveCardUp(index)} 
-                        disabled={index === 0} 
-                        className="px-2 py-1 mb-1 text-xs bg-gray-200 rounded disabled:opacity-50"
-                      >
-                        ↑
-                      </button>
-                      <button 
-                        onClick={() => moveCardDown(index)} 
-                        disabled={index === cards.length - 1} 
-                        className="px-2 py-1 text-xs bg-gray-200 rounded disabled:opacity-50"
-                      >
-                        ↓
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          <button
-            onClick={startGameHandler}
-            className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-            disabled={cards.length !== 7}
-          >
-            Start Game
-          </button>
-        </>
-      ) : (
-        <div>
-          <h3 className="text-lg font-bold">Game In Progress</h3>
-          {roundData ? (
-            <p>Round Attribute: {roundData.attribute}</p>
-          ) : (
-            <p>Waiting for round...</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default DeckBuilder;
-```
+                    <bu
