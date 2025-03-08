@@ -1,4 +1,3 @@
-/ DeckBuilder.js
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 
@@ -9,7 +8,11 @@ const socket = io("https://xat-backend-i0n8.onrender.com", {
 
 const DeckBuilder = ({ setDeck, startGame }) => {
   const [cards, setCards] = useState([]);
-  const [newCard, setNewCard] = useState({ name: "", image: "", attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } });
+  const [newCard, setNewCard] = useState({ 
+    name: "", 
+    image: "", 
+    attributes: { A: 2, B: 2, C: 2, D: 2, E: 2 } 
+  });
   const [isDeckComplete, setIsDeckComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
@@ -54,7 +57,7 @@ const DeckBuilder = ({ setDeck, startGame }) => {
 
   const moveCard = (index, direction) => {
     if ((direction === -1 && index === 0) || (direction === 1 && index === cards.length - 1)) {
-      return; // Can't move beyond array boundaries
+      return;
     }
     
     const newCards = [...cards];
@@ -67,15 +70,19 @@ const DeckBuilder = ({ setDeck, startGame }) => {
   const startGameHandler = () => {
     if (cards.length === 7) {
       socket.emit("startGame");
-      setDeck(cards);
-      startGame(cards);
+      if (typeof setDeck === 'function') {
+        setDeck(cards);
+      }
+      if (typeof startGame === 'function') {
+        startGame(cards);
+      }
     } else {
       setErrorMessage("You need 7 cards to start the game.");
     }
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto flex flex-col items-center" style={{ padding: "20px 50px" }}>
+    <div className="p-4 max-w-lg mx-auto flex flex-col items-center">
       {!gameStarted ? (
         <>
           <div className="w-full max-w-3xl">

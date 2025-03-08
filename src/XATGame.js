@@ -1,4 +1,3 @@
-// XATGame.js
 import React, { useState, useEffect } from "react";
 import io from "socket.io-client";
 
@@ -9,22 +8,20 @@ const socket = io("https://xat-backend-i0n8.onrender.com", {
 });
 
 const XATGame = ({ deck }) => {
-  const [gameStatus, setGameStatus] = useState("waiting"); // waiting, playing, over
+  const [gameStatus, setGameStatus] = useState("waiting");
   const [message, setMessage] = useState("Waiting for opponent...");
   const [round, setRound] = useState(0);
   const [attribute, setAttribute] = useState(null);
   const [playerCard, setPlayerCard] = useState(null);
   const [opponentCard, setOpponentCard] = useState(null);
   const [scores, setScores] = useState({});
-  const [playerId, setPlayerId] = useState(socket.id);
   const [roundWinner, setRoundWinner] = useState(null);
   const [gameWinner, setGameWinner] = useState(null);
   const [opponentId, setOpponentId] = useState(null);
-  const [roundHistory, setRoundHistory] = useState([]);
   const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
-    // Add error handling for socket connection
+    // Error handling for socket connection
     socket.on("connect", () => {
       console.log("Connected to server");
       setConnectionError(false);
@@ -36,12 +33,14 @@ const XATGame = ({ deck }) => {
       setMessage("Connection error. Trying to reconnect...");
     });
 
-    // Join the game with your deck when component mounts
-    try {
-      socket.emit("joinGame", { deck });
-      console.log("Joining game with deck:", deck);
-    } catch (err) {
-      console.error("Error joining game:", err);
+    // Join the game with deck
+    if (deck && deck.length === 7) {
+      try {
+        socket.emit("joinGame", { deck });
+        console.log("Joining game with deck:", deck);
+      } catch (err) {
+        console.error("Error joining game:", err);
+      }
     }
     
     socket.on("waitingForOpponent", () => {
@@ -53,32 +52,31 @@ const XATGame = ({ deck }) => {
       setGameStatus("playing");
       setMessage("Game started!");
       
-      // Store opponent ID
-      const otherPlayerId = data.playerIds.find(id => id !== socket.id);
-      setOpponentId(otherPlayerId);
-      
-      // Initialize scores
-      setScores({ [socket.id]: 0, [otherPlayerId]: 0 });
+      if (data.playerIds && data.playerIds.length === 2) {
+        const otherPlayerId = data.playerIds.find(id => id !== socket.id);
+        setOpponentId(otherPlayerId);
+        setScores({ [socket.id]: 0, [otherPlayerId]: 0 });
+      }
     });
 
     socket.on("roundResult", (data) => {
       console.log("Round result:", data);
-      setRound(data.round);
-      setAttribute(data.attribute);
+      if (data.round) setRound(data.round);
+      if (data.attribute) setAttribute(data.attribute);
       
-      // Set cards based on player perspective
-      if (socket.id === data.player1Card.playerId) {
-        setPlayerCard(data.player1Card);
-        setOpponentCard(data.player2Card);
-      } else {
-        setPlayerCard(data.player2Card);
-        setOpponentCard(data.player1Card);
+      if (data.player1Card && data.player2Card) {
+        if (socket.id === data.player1Card.playerId) {
+          setPlayerCard(data.player1Card);
+          setOpponentCard(data.player2Card);
+        } else {
+          setPlayerCard(data.player2Card);
+          setOpponentCard(data.player1Card);
+        }
       }
       
-      setRoundWinner(data.roundWinner);
-      setScores(data.scores);
+      if (data.roundWinner) setRoundWinner(data.roundWinner);
+      if (data.scores) setScores(data.scores);
       
-      // Display who won the round
       if (data.roundWinner === "tie") {
         setMessage("This round was a tie! Both players get a point.");
       } else if (data.roundWinner === socket.id) {
@@ -93,14 +91,12 @@ const XATGame = ({ deck }) => {
     socket.on("gameOver", (data) => {
       console.log("Game over:", data);
       setGameStatus("over");
-      setGameWinner(data.winner);
-      setScores(data.scores);
+      if (data.winner) setGameWinner(data.winner);
+      if (data.scores) setScores(data.scores);
       
       if (data.winner === socket.id) {
         setMessage("Congratulations! You won the game!");
-      } else if (data.winner === "tie") {
-        setMessage("The game ended in a tie!");
-      } else if (data.winner === null) {
+      } else if (data.winner === "tie" || data.winner === null) {
         setMessage("The game ended in a tie!");
       } else {
         setMessage("Game over! Your opponent won.");
@@ -110,7 +106,7 @@ const XATGame = ({ deck }) => {
     socket.on("opponentDisconnected", (data) => {
       console.log("Opponent disconnected:", data);
       setGameStatus("over");
-      setMessage(data.message);
+      setMessage(data.message || "Your opponent disconnected.");
       if (data.winner === socket.id) {
         setGameWinner(socket.id);
       }
@@ -118,7 +114,7 @@ const XATGame = ({ deck }) => {
 
     socket.on("gameError", (data) => {
       console.error("Game error:", data);
-      setMessage(`Error: ${data.message}`);
+      setMessage(`Error: ${data.message || "Unknown game error"}`);
     });
 
     return () => {
@@ -185,7 +181,7 @@ const XATGame = ({ deck }) => {
                 <h4 className="font-bold text-center border-b pb-1 mb-2">Your Card</h4>
                 <p className="text-center text-lg mb-3">{playerCard.name}</p>
                 <div className="grid grid-cols-5 gap-1 mt-2">
-                  {Object.entries(playerCard.attributes).map(([key, value]) => (
+                  {Object.entries(playerCard.attributes || {}).map(([key, value]) => (
                     <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1' : ''}`}>
                       <div className="font-bold">{key}</div>
                       <div>{value}</div>
@@ -198,7 +194,7 @@ const XATGame = ({ deck }) => {
                 <h4 className="font-bold text-center border-b pb-1 mb-2">Opponent's Card</h4>
                 <p className="text-center text-lg mb-3">{opponentCard.name}</p>
                 <div className="grid grid-cols-5 gap-1 mt-2">
-                  {Object.entries(opponentCard.attributes).map(([key, value]) => (
+                  {Object.entries(opponentCard.attributes || {}).map(([key, value]) => (
                     <div key={key} className={`text-center ${key === attribute ? 'bg-yellow-300 text-black rounded p-1' : ''}`}>
                       <div className="font-bold">{key}</div>
                       <div>{value}</div>
