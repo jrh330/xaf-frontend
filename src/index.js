@@ -1,9 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 
-// Simple error boundary to prevent crashes during rendering
+// Simple error boundary
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -21,30 +21,10 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ 
-          padding: '20px', 
-          margin: '20px auto', 
-          maxWidth: '500px', 
-          textAlign: 'center',
-          border: '1px solid #f5c6cb',
-          borderRadius: '4px',
-          backgroundColor: '#f8d7da',
-          color: '#721c24'
-        }}>
+        <div style={{ padding: '20px', textAlign: 'center' }}>
           <h2>Something went wrong</h2>
           <p>The application encountered an error. Please refresh the page.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
-          >
+          <button onClick={() => window.location.reload()}>
             Refresh
           </button>
         </div>
@@ -54,9 +34,11 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-ReactDOM.render(
+// Use createRoot instead of ReactDOM.render
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(
   <ErrorBoundary>
     <App />
-  </ErrorBoundary>,
-  document.getElementById('root')
+  </ErrorBoundary>
 );
