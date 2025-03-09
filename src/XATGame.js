@@ -36,7 +36,7 @@ const createEmojiImage = (emoji) => {
   return canvas.toDataURL('image/png');
 };
 
-const XATGame = ({ deck, playerName = '' }) => {
+const XATGame = ({ deck, playerName = '', playAgain }) => {
   const [gameStatus, setGameStatus] = useState("waiting");
   const [message, setMessage] = useState("Waiting for opponent...");
   const [round, setRound] = useState(0);
@@ -47,7 +47,7 @@ const XATGame = ({ deck, playerName = '' }) => {
   const [roundWinner, setRoundWinner] = useState(null);
   const [gameWinner, setGameWinner] = useState(null);
   const [opponentId, setOpponentId] = useState(null);
-  const [opponentName, setOpponentName] = useState("Player 2");
+  const [opponentName, setOpponentName] = useState("Opponent");
   const [playedCards, setPlayedCards] = useState([]);
   const [opponentPlayedCards, setOpponentPlayedCards] = useState([]);
   const [roundHistory, setRoundHistory] = useState([]);
@@ -218,6 +218,14 @@ const XATGame = ({ deck, playerName = '' }) => {
     return playerName || "You";
   };
 
+  const handlePlayAgain = () => {
+    if (typeof playAgain === 'function') {
+      playAgain();
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="p-4" style={{ padding: "0 50px" }}>
       <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
@@ -248,10 +256,27 @@ const XATGame = ({ deck, playerName = '' }) => {
         </div>
       )}
       
-      {/* Three-box layout with proper borders - IMPORTANT: Use flex instead of grid */}
-      <div className="flex flex-row gap-4 mb-6" style={{ display: "flex !important", flexDirection: "row !important" }}>
+      {/* Three-box layout with FIXED horizontal arrangement */}
+      <div 
+        style={{
+          display: "flex !important", 
+          flexDirection: "row !important",
+          width: "100%",
+          gap: "16px",
+          minHeight: "500px"
+        }}
+      >
         {/* Left Box - Your Deck */}
-        <div className="border-2 border-black p-4 rounded flex-1" style={{ flexBasis: "33%", minHeight: "500px" }}>
+        <div 
+          style={{
+            flex: "1 1 33% !important", 
+            border: "2px solid black",
+            borderRadius: "0.25rem",
+            padding: "1rem",
+            maxWidth: "33%",
+            overflow: "auto"
+          }}
+        >
           <h3 className="font-bold mb-3 text-center border-b pb-2">Your Deck</h3>
           <div className="overflow-x-auto" style={{ maxWidth: "100%" }}>
             <table className="w-full text-sm border-collapse border border-gray-300" style={{ tableLayout: "fixed" }}>
@@ -298,7 +323,16 @@ const XATGame = ({ deck, playerName = '' }) => {
         </div>
         
         {/* Middle Box - Current Gameplay */}
-        <div className="border-2 border-black p-4 rounded flex-1" style={{ flexBasis: "33%", minHeight: "500px" }}>
+        <div 
+          style={{
+            flex: "1 1 33% !important", 
+            border: "2px solid black",
+            borderRadius: "0.25rem",
+            padding: "1rem",
+            maxWidth: "33%",
+            overflow: "auto"
+          }}
+        >
           <h3 className="font-bold mb-3 text-center border-b pb-2">Current Round</h3>
           
           {gameStatus === "waiting" ? (
@@ -402,7 +436,7 @@ const XATGame = ({ deck, playerName = '' }) => {
               </h3>
               <p className="mb-4">Final Score: <span className="font-bold text-blue-600">{scores[socket.id] || 0}</span> - <span className="font-bold text-red-600">{scores[opponentId] || 0}</span></p>
               <button 
-                onClick={() => window.location.reload()} 
+                onClick={handlePlayAgain}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
               >
                 Play Again
@@ -412,7 +446,16 @@ const XATGame = ({ deck, playerName = '' }) => {
         </div>
         
         {/* Right Box - Opponent's Played Cards */}
-        <div className="border-2 border-black p-4 rounded flex-1" style={{ flexBasis: "33%", minHeight: "500px" }}>
+        <div 
+          style={{
+            flex: "1 1 33% !important", 
+            border: "2px solid black",
+            borderRadius: "0.25rem",
+            padding: "1rem",
+            maxWidth: "33%",
+            overflow: "auto"
+          }}
+        >
           <h3 className="font-bold mb-3 text-center border-b pb-2">{opponentName}'s Cards</h3>
           
           {opponentPlayedCards.length > 0 ? (

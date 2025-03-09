@@ -28,6 +28,10 @@ function App() {
 
   const startGame = (deckData) => {
     console.log("Starting game with deck:", deckData);
+    
+    // Save the deck to localStorage
+    localStorage.setItem('xatDeck', JSON.stringify(deckData));
+    
     setDeck(deckData);
     setGameStarted(true);
     
@@ -40,10 +44,18 @@ function App() {
   const returnToDeckBuilder = () => {
     setGameStarted(false);
   };
-
+  
+  const playAgain = () => {
+    // Keep the same deck but return to the game
+    setGameStarted(true);
+  };
+  
   const handleNameChange = (e) => {
     setPlayerName(e.target.value);
   };
+
+  // Pass the playAgain function to XATGame
+  // This way it can use the same deck again without rebuilding
 
   return (
     <div className="App p-4 max-w-6xl mx-auto">
@@ -74,7 +86,11 @@ function App() {
           >
             <span className="mr-1">←</span> Back to Deck Builder
           </button>
-          <XATGame deck={deck} playerName={playerName} />
+          <XATGame 
+            deck={deck} 
+            playerName={playerName} 
+            playAgain={playAgain}
+          />
         </div>
       )}
     </div>

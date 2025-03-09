@@ -82,11 +82,11 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
         return;
       }
 
-      // Process the image - center crop and resize to 100x100
+      // Process the image - center crop and resize to 80x80
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 100;
-      canvas.height = 100;
+      canvas.width = 80;
+      canvas.height = 80;
 
       // Calculate dimensions for center crop
       const size = Math.min(img.width, img.height);
@@ -97,7 +97,7 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
       ctx.drawImage(
         img, 
         startX, startY, size, size,
-        0, 0, 100, 100
+        0, 0, 80, 80
       );
 
       // Convert to base64 data URL
@@ -173,6 +173,16 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
     // If deck was complete, it's no longer complete
     setIsDeckComplete(false);
   };
+  
+  const removeCard = (index) => {
+    // Remove the card from the deck
+    const newCards = [...cards];
+    newCards.splice(index, 1);
+    setCards(newCards);
+    
+    // If deck was complete, it's no longer complete
+    setIsDeckComplete(false);
+  };
 
   const startGameHandler = () => {
     if (cards.length === 7) {
@@ -192,6 +202,20 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
     } else {
       setErrorMessage("You need 7 cards to start the game.");
     }
+  };
+  
+  const createNewDeck = () => {
+    setCards([]);
+    setIsDeckComplete(false);
+    setNewCard({ 
+      name: "", 
+      image: "", 
+      imagePreview: "",
+      attributes: { A: 3, B: 3, C: 3, D: 3, E: 3 } 
+    });
+    
+    // Clear localStorage
+    localStorage.removeItem('xatDeck');
   };
 
   // Helper function to generate a random deck for testing
@@ -237,7 +261,31 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
       {!gameStarted ? (
         <>
           <div className="w-full max-w-3xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">Create Your Deck</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Create Your Deck</h2>
+              
+              {/* Add buttons for deck management */}
+              <div className="flex space-x-2">
+                {cards.length > 0 && (
+                  <button
+                    onClick={createNewDeck}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Create New Deck
+                  </button>
+                )}
+                
+                {cards.length === 0 && (
+                  <button
+                    onClick={createRandomDeck}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Generate Random Deck
+                  </button>
+                )}
+              </div>
+            </div>
+            
             <div className="mb-4 p-4 border rounded shadow-sm">
               <input
                 type="text"
@@ -257,7 +305,7 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
                     <img 
                       src={newCard.imagePreview} 
                       alt="Card preview" 
-                      className="w-24 h-24 object-cover border mb-2" 
+                      className="w-20 h-20 object-cover border mb-2" 
                     />
                     <p className="text-sm text-gray-500">Click to change image</p>
                   </div>
@@ -329,15 +377,6 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
                 >
                   Add Card
                 </button>
-                
-                {cards.length === 0 && (
-                  <button
-                    onClick={createRandomDeck}
-                    className="ml-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded"
-                  >
-                    Generate Random Deck
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -368,9 +407,9 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
                       <td className="border p-2 text-center">{index + 1}</td>
                       <td className="border p-2 text-center">
                         {card.image ? (
-                          <img src={card.image} alt="Card" className="w-10 h-10 object-cover mx-auto" />
+                          <img src={card.image} alt="Card" className="w-16 h-16 object-cover mx-auto" />
                         ) : (
-                          <div className="w-10 h-10 bg-gray-200 rounded mx-auto"></div>
+                          <div className="w-16 h-16 bg-gray-200 rounded mx-auto"></div>
                         )}
                       </td>
                       <td className="border p-2">{card.name}</td>
@@ -385,13 +424,22 @@ const DeckBuilder = ({ setDeck, startGame, initialDeck = null }) => {
                       <td className="border p-2">
                         <div className="flex justify-center space-x-1">
                           {!isDeckComplete && (
-                            <button 
-                              onClick={() => editCard(index)} 
-                              className="px-2 py-1 bg-yellow-400 hover:bg-yellow-500 text-white rounded text-xs"
-                              title="Edit card"
-                            >
-                              Edit
-                            </button>
+                            <>
+                              <button 
+                                onClick={() => editCard(index)} 
+                                className="px-2 py-1 bg-yellow-400 hover:bg-yellow-500 text-white rounded text-xs"
+                                title="Edit card"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => removeCard(index)} 
+                                className="px-2 py-1 bg-red-400 hover:bg-red-500 text-white rounded text-xs"
+                                title="Remove card"
+                              >
+                                ✕
+                              </button>
+                            </>
                           )}
                           <button 
                             onClick={() => moveCard(index, -1)} 
