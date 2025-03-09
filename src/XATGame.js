@@ -51,11 +51,14 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
   const [playedCards, setPlayedCards] = useState([]);
   const [opponentPlayedCards, setOpponentPlayedCards] = useState([]);
   const [roundHistory, setRoundHistory] = useState([]);
+  
+  // Process deck to ensure all cards have images
+  const [processedDeck, setProcessedDeck] = useState([]);
 
   // Ensure all cards have images by adding emoji placeholders
   useEffect(() => {
     if (deck && deck.length) {
-      const updatedDeck = deck.map(card => {
+      const processedCards = deck.map(card => {
         if (!card.image) {
           const emoji = getRandomEmoji();
           return {
@@ -66,23 +69,18 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
         }
         return card;
       });
-      
-      // If the deck was updated with emojis, we might want to emit it to the server
-      const hasChanges = updatedDeck.some((card, i) => card.image !== deck[i].image);
-      if (hasChanges) {
-        socket.emit("updateDeck", { deck: updatedDeck });
-      }
+      setProcessedDeck(processedCards);
     }
   }, [deck]);
 
   useEffect(() => {
-    // Join the game with your deck and player name
-    if (deck && deck.length === 7) {
+    // Join the game with the processed deck
+    if (processedDeck && processedDeck.length === 7) {
       socket.emit("joinGame", { 
-        deck,
+        deck: processedDeck,
         playerName: playerName || "You"
       });
-      console.log("Joining game with deck:", deck);
+      console.log("Joining game with processed deck");
     }
     
     socket.on("waitingForOpponent", () => {
@@ -207,7 +205,7 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
       socket.off("opponentDisconnected");
       socket.off("gameError");
     };
-  }, [deck, playerName]);
+  }, [processedDeck, playerName]);
 
   // Function to get a CSS class for highlighting the current attribute
   const getAttributeClass = (attr) => {
@@ -217,11 +215,12 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
   const getPlayerDisplayName = () => {
     return playerName || "You";
   };
-
+  
   const handlePlayAgain = () => {
     if (typeof playAgain === 'function') {
       playAgain();
     } else {
+      // Fallback if playAgain isn't defined
       window.location.reload();
     }
   };
@@ -256,45 +255,41 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
         </div>
       )}
       
-      {/* Three-box layout with FIXED horizontal arrangement */}
-      <div 
-        style={{
-          display: "flex !important", 
-          flexDirection: "row !important",
-          width: "100%",
-          gap: "16px",
-          minHeight: "500px"
-        }}
-      >
+      {/* Three-box layout with forced horizontal arrangement */}
+      <div style={{ 
+        display: "flex", 
+        flexDirection: "row", 
+        gap: "1rem", 
+        width: "100%",
+        marginBottom: "1.5rem"
+      }}>
         {/* Left Box - Your Deck */}
-        <div 
-          style={{
-            flex: "1 1 33% !important", 
-            border: "2px solid black",
-            borderRadius: "0.25rem",
-            padding: "1rem",
-            maxWidth: "33%",
-            overflow: "auto"
-          }}
-        >
+        <div style={{ 
+          flex: "1 1 0", 
+          border: "2px solid black", 
+          borderRadius: "0.25rem", 
+          padding: "1rem",
+          minWidth: "0",
+          overflow: "auto"
+        }}>
           <h3 className="font-bold mb-3 text-center border-b pb-2">Your Deck</h3>
-          <div className="overflow-x-auto" style={{ maxWidth: "100%" }}>
+          <div style={{ overflowX: "auto" }}>
             <table className="w-full text-sm border-collapse border border-gray-300" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="p-2 text-left border border-gray-300" style={{ width: "60px" }}>Card</th>
-                  <th className="p-2 text-center border border-gray-300" style={{ width: "80px" }}>Image</th>
-                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`} style={{ width: "30px" }}>A</th>
-                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`} style={{ width: "30px" }}>B</th>
-                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`} style={{ width: "30px" }}>C</th>
-                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`} style={{ width: "30px" }}>D</th>
-                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`} style={{ width: "30px" }}>E</th>
+                  <th className="p-2 text-center border border-gray-300" style={{ width: "10%" }}>Card</th>
+                  <th className="p-2 text-center border border-gray-300" style={{ width: "20%" }}>Image</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`} style={{ width: "14%" }}>A</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('B')}`} style={{ width: "14%" }}>B</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('C')}`} style={{ width: "14%" }}>C</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`} style={{ width: "14%" }}>D</th>
+                  <th className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`} style={{ width: "14%" }}>E</th>
                 </tr>
               </thead>
               <tbody>
-                {deck ? deck.map((card, idx) => (
+                {processedDeck.map((card, idx) => (
                   <tr key={idx} className={idx === round - 1 ? "bg-blue-100" : idx < round - 1 ? "bg-gray-100" : ""}>
-                    <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
+                    <td className="p-2 border border-gray-300 text-center">{idx + 1}</td>
                     <td className="p-2 border border-gray-300 text-center">
                       {card.image ? (
                         <img src={card.image} alt="Card" className="w-16 h-16 object-cover mx-auto" />
@@ -303,7 +298,9 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
                           {card.emojiUsed}
                         </div>
                       ) : (
-                        <div className="w-16 h-16 bg-gray-200 rounded mx-auto"></div>
+                        <div className="w-16 h-16 bg-gray-200 rounded mx-auto flex items-center justify-center text-4xl">
+                          {getRandomEmoji()}
+                        </div>
                       )}
                     </td>
                     <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('A')}`}>{card.attributes.A}</td>
@@ -312,27 +309,21 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
                     <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('D')}`}>{card.attributes.D}</td>
                     <td className={`p-2 text-center border border-gray-300 ${getAttributeClass('E')}`}>{card.attributes.E}</td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="7" className="p-4 text-center text-gray-500 border border-gray-300">No cards in deck</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         
         {/* Middle Box - Current Gameplay */}
-        <div 
-          style={{
-            flex: "1 1 33% !important", 
-            border: "2px solid black",
-            borderRadius: "0.25rem",
-            padding: "1rem",
-            maxWidth: "33%",
-            overflow: "auto"
-          }}
-        >
+        <div style={{ 
+          flex: "1 1 0", 
+          border: "2px solid black", 
+          borderRadius: "0.25rem", 
+          padding: "1rem",
+          minWidth: "0", 
+          overflow: "auto"
+        }}>
           <h3 className="font-bold mb-3 text-center border-b pb-2">Current Round</h3>
           
           {gameStatus === "waiting" ? (
@@ -446,38 +437,34 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
         </div>
         
         {/* Right Box - Opponent's Played Cards */}
-        <div 
-          style={{
-            flex: "1 1 33% !important", 
-            border: "2px solid black",
-            borderRadius: "0.25rem",
-            padding: "1rem",
-            maxWidth: "33%",
-            overflow: "auto"
-          }}
-        >
+        <div style={{ 
+          flex: "1 1 0", 
+          border: "2px solid black", 
+          borderRadius: "0.25rem", 
+          padding: "1rem",
+          minWidth: "0",
+          overflow: "auto"
+        }}>
           <h3 className="font-bold mb-3 text-center border-b pb-2">{opponentName}'s Cards</h3>
           
           {opponentPlayedCards.length > 0 ? (
-            <div className="overflow-y-auto" style={{ maxHeight: "430px" }}>
+            <div style={{ maxHeight: "430px", overflowY: "auto" }}>
               <table className="w-full text-sm border-collapse border border-gray-300" style={{ tableLayout: "fixed" }}>
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="p-2 text-left border border-gray-300" style={{ width: "50px" }}>Round</th>
-                    <th className="p-2 text-left border border-gray-300">Card</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "80px" }}>Image</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "30px" }}>A</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "30px" }}>B</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "30px" }}>C</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "30px" }}>D</th>
-                    <th className="p-2 text-center border border-gray-300" style={{ width: "30px" }}>E</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "10%" }}>Round</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "20%" }}>Image</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "14%" }}>A</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "14%" }}>B</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "14%" }}>C</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "14%" }}>D</th>
+                    <th className="p-2 text-center border border-gray-300" style={{ width: "14%" }}>E</th>
                   </tr>
                 </thead>
                 <tbody>
                   {opponentPlayedCards.map((card, idx) => (
                     <tr key={idx} className={idx === opponentPlayedCards.length - 1 ? "bg-red-50" : ""}>
-                      <td className="p-2 border border-gray-300">{idx + 1}</td>
-                      <td className="p-2 border border-gray-300">{card.name || `Card ${idx+1}`}</td>
+                      <td className="p-2 border border-gray-300 text-center">{idx + 1}</td>
                       <td className="p-2 border border-gray-300 text-center">
                         {card.image ? (
                           <img src={card.image} alt="Card" className="w-16 h-16 object-cover mx-auto" />
@@ -486,7 +473,9 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
                             {card.emojiUsed}
                           </div>
                         ) : (
-                          <div className="w-16 h-16 bg-gray-200 rounded mx-auto"></div>
+                          <div className="w-16 h-16 bg-gray-200 rounded mx-auto flex items-center justify-center text-4xl">
+                            {getRandomEmoji()}
+                          </div>
                         )}
                       </td>
                       <td className={`p-2 text-center border border-gray-300 ${roundHistory[idx]?.attribute === 'A' ? 'bg-yellow-100' : ''}`}>{card.attributes.A}</td>
@@ -510,42 +499,49 @@ const XATGame = ({ deck, playerName = '', playAgain }) => {
       
       {/* Game History - Show after game is over */}
       {gameStatus === "over" && roundHistory.length > 0 && (
-        <div className="mt-4 border-2 border-black p-4 rounded">
+        <div style={{ 
+          border: "2px solid black", 
+          borderRadius: "0.25rem", 
+          padding: "1rem",
+          marginTop: "1rem"
+        }}>
           <h3 className="font-bold mb-3 text-center border-b pb-2">Round History</h3>
-          <table className="w-full text-sm border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 text-left border border-gray-300">Round</th>
-                <th className="p-2 text-left border border-gray-300">Attribute</th>
-                <th className="p-2 text-left border border-gray-300">Your Card</th>
-                <th className="p-2 text-left border border-gray-300">Your Value</th>
-                <th className="p-2 text-left border border-gray-300">{opponentName}'s Card</th>
-                <th className="p-2 text-left border border-gray-300">{opponentName}'s Value</th>
-                <th className="p-2 text-left border border-gray-300">Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roundHistory.map((round, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
-                  <td className="p-2 border border-gray-300">{round.round}</td>
-                  <td className="p-2 border border-gray-300">{round.attribute}</td>
-                  <td className="p-2 border border-gray-300">{round.playerCard?.name || `Card ${round.round}`}</td>
-                  <td className="p-2 border border-gray-300">{round.playerValue}</td>
-                  <td className="p-2 border border-gray-300">{round.opponentCard?.name || `Card ${round.round}`}</td>
-                  <td className="p-2 border border-gray-300">{round.opponentValue}</td>
-                  <td className="p-2 border border-gray-300">
-                    <span className={
-                      round.winner === socket.id ? "text-green-600 font-bold" : 
-                      round.winner === "tie" ? "text-blue-600 font-bold" : "text-red-600 font-bold"
-                    }>
-                      {round.winner === socket.id ? "WIN" : 
-                       round.winner === "tie" ? "TIE" : "LOSS"}
-                    </span>
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table className="w-full text-sm border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left border border-gray-300">Round</th>
+                  <th className="p-2 text-left border border-gray-300">Attribute</th>
+                  <th className="p-2 text-left border border-gray-300">Your Card</th>
+                  <th className="p-2 text-left border border-gray-300">Your Value</th>
+                  <th className="p-2 text-left border border-gray-300">{opponentName}'s Card</th>
+                  <th className="p-2 text-left border border-gray-300">{opponentName}'s Value</th>
+                  <th className="p-2 text-left border border-gray-300">Result</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {roundHistory.map((round, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                    <td className="p-2 border border-gray-300">{round.round}</td>
+                    <td className="p-2 border border-gray-300">{round.attribute}</td>
+                    <td className="p-2 border border-gray-300">{round.playerCard?.name || `Card ${round.round}`}</td>
+                    <td className="p-2 border border-gray-300">{round.playerValue}</td>
+                    <td className="p-2 border border-gray-300">{round.opponentCard?.name || `Card ${round.round}`}</td>
+                    <td className="p-2 border border-gray-300">{round.opponentValue}</td>
+                    <td className="p-2 border border-gray-300">
+                      <span className={
+                        round.winner === socket.id ? "text-green-600 font-bold" : 
+                        round.winner === "tie" ? "text-blue-600 font-bold" : "text-red-600 font-bold"
+                      }>
+                        {round.winner === socket.id ? "WIN" : 
+                         round.winner === "tie" ? "TIE" : "LOSS"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
